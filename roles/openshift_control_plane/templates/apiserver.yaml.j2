@@ -28,6 +28,10 @@ spec:
     securityContext:
       privileged: true
     volumeMounts:
+{% if openshift.master.audit_config is defined and (openshift.master.audit_config.enabled | default(False)) == True %}
+     - mountPath: {{ (openshift.master.audit_config.auditFilePath | default('/var/log/origin-audit.log')) | basepath }}
+       name: master-audit
+{% endif %}
      - mountPath: /etc/origin/master/
        name: master-config
      - mountPath: /etc/origin/cloudprovider/
@@ -51,6 +55,11 @@ spec:
       initialDelaySeconds: 10
       timeoutSeconds: 10
   volumes:
+{% if openshift.master.audit_config is defined and (openshift.master.audit_config.enabled | default(False)) == True %}
+  - name: master-audit
+    hostPath:
+      path: {{ (openshift.master.audit_config.auditFilePath | default('/var/log/origin-audit.log')) | basepath }}
+{% endif %}
   - name: master-config
     hostPath:
       path: /etc/origin/master/

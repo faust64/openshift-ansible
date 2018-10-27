@@ -17,10 +17,28 @@
   register: mktemp
   changed_when: false
 
+- name: Ensure Audit log directory exists
+  file:
+    dest: "{{ (openshift.master.audit_config.auditFilePath | default('/var/log/origin-audit.log')) | basepath }}"
+    state: directory
+  register: created_audit_dir
+  when:
+  - openshift.master.audit_config is defined
+  - (openshift.master.audit_config.enabled | default(False))
+
+- name: Restrict accesses to Audit logs
+  file:
+    dest: "{{ (openshift.master.audit_config.auditFilePath | default('/var/log/origin-audit.log')) | basepath }}"
+    group: root
+    mode: 0700
+    owner: root
+    state: directory
+  when: (created_audit_dir.changed | default(False))
+
 - name: Prepare master static pods
-  copy:
-    src: "{{ item }}"
-    dest: "{{ mktemp.stdout }}"
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ mktemp.stdout }}/{{ item }}"
     mode: 0600
   with_items:
   - apiserver.yaml
